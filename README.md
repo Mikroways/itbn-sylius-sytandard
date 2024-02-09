@@ -35,6 +35,19 @@ Modificamos únicamnte el agregado de una variable en el multistage `base` para
 que composer pueda usar más de 1.5GB de RAM (valor limitado por defecto), usando
 la variable `COMPOSER_MEMORY_LIMIT=-1`.
 
+## Entrypoint
+
+**Este es un puno IMPORTANTE!!**
+
+Modificamos el entrypoint comentando los `setfacl` como puede verse en [estas
+líneas de los fuentes del entrypoint de
+php](https://github.com/Mikroways/itbn-sylius-sytandard/blob/feature/demo-itbn/docker/php/docker-entrypoint.sh#L11).
+Si bien esto proviene de la imagen oficial, no considero apropiado que funcione
+con root. Y este comando no es posible usarlo por un usuario no privilegiado. No
+debería de ser necesario usarlo de hecho. En todo caso, ver de otorgar alguna
+capability para usarlo, pero no debería necesitarse si todo corre con el usuario
+dado.
+
 ## Uso de direnv mediante `.envrc`
 
 Proponemos un refactor del docker-compose para ser usado en linux, y considerar
