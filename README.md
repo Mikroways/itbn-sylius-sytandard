@@ -1,101 +1,131 @@
-<p align="center">
-    <a href="https://sylius.com" target="_blank">
-        <img src="https://demo.sylius.com/assets/shop/img/logo.png" />
-    </a>
-</p>
+# Demo Sylius para ITBN
 
-<h1 align="center">Sylius Standard Edition</h1>
+Esta demo parte del template original [Sylius
+Standard](https://github.com/Sylius/Sylius-Standard). Al iniciar el ejemplo que
+por defecto parte de la versión 1.12 de sylius (porque la 1.13 está en alpha
+aún), nos encontramos con una serie de cambioa que se debieron realizar y que
+deben considerarse antes de pasar a producción.
 
-<p align="center">This is Sylius Standard Edition repository for starting new projects.</p>
+## `composer.lock` no se versiona
 
-## About
-
-Sylius is the first decoupled eCommerce framework based on [**Symfony**](http://symfony.com) and [**Doctrine**](http://doctrine-project.org). 
-The highest quality of code, strong testing culture, built-in Agile (BDD) workflow and exceptional flexibility make it the best solution for application tailored to your business requirements. 
-Enjoy being an eCommerce Developer again!
-
-Powerful REST API allows for easy integrations and creating unique customer experience on any device.
-
-We're using full-stack Behavior-Driven-Development, with [phpspec](http://phpspec.net) and [Behat](http://behat.org)
-
-## Documentation
-
-Documentation is available at [docs.sylius.com](http://docs.sylius.com).
-
-## Installation
-
-### Traditional
-```bash
-$ wget http://getcomposer.org/composer.phar
-$ php composer.phar create-project sylius/sylius-standard project
-$ cd project
-$ yarn install
-$ yarn build
-$ php bin/console sylius:install
-$ symfony serve
-$ open http://localhost:8000/
-```
-
-For more detailed instruction please visit [installation chapter in our docs](https://docs.sylius.com/en/latest/book/installation/installation.html).
-
-### Docker
-
-#### Development
-
-Make sure you have installed [Docker](https://docs.docker.com/get-docker/) on your local machine.
-Execute `docker compose up -d` in your favorite terminal and wait some time until the services will be ready. You might want to see docker logs.
-Then enter `localhost` in your browser or execute `open localhost` in your terminal.
-
-#### Production
-
-The simplest way to deploy your Sylius store via Docker is via `docker-compose.prod.yml` configuration file.
-To do that you need to install [Docker](https://docs.docker.com/get-docker/) on your VPS and define `MYSQL_PASSWORD` environment.
-Then execute `docker compose -f docker-compose.prod.yml up -d` command in your terminal. The `MYSQL_PASSWORD` env will be automatically
-applied to the rest of the config.
-
-> When using a Virtual Private Server (VPS) we recommend having at least 2GB of RAM memory
-
-**Quick deploy:**
-```bash
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-
-export MYSQL_PASSWORD=SLyPJLaye7
-
-docker compose -f docker-compose.prod.yml up -d
-docker compose -f docker-compose.prod.yml exec php bin/console sylius:fixtures:load --no-interaction
-```
-
-## Troubleshooting
-
-If something goes wrong, errors & exceptions are logged at the application level:
+Al ver el proyecto template original, vemos que propone versionar
+`composer.lock`. Sin embargo, en el [ticket
+665](https://github.com/Sylius/Sylius-Standard/issues/665) y con el [PR
+855](https://github.com/Sylius/Sylius-Standard/pull/855) se da solución a este
+problema, cuando se trabaja con:
 
 ```bash
-$ tail -f var/log/prod.log
-$ tail -f var/log/dev.log
+ php composer.phar create-project sylius/sylius-standard project
 ```
 
-## Contributing
+Sin embargo, si se sigue la [documentación para desarrollar con
+docker](https://docs.sylius.com/en/1.12/book/installation/installation_with_docker.html),
+este paso  es omitido, y el archivo de locks queda fuera del versionado.
 
-Would like to help us and build the most developer-friendly eCommerce framework? Start from reading our [Contribution Guide](https://docs.sylius.com/en/latest/contributing/)!
+Nuestro criterio, basado en [la documentación de
+composer](https://getcomposer.org/doc/01-basic-usage.md#commit-your-composer-lock-file-to-version-control)
+es la de **versionar este archivo**. Por esta razón, manualmente cambiamos el
+`.gitignore` y aprovechamos para crear el [ticket
+947](https://github.com/Sylius/Sylius-Standard/issues/947) para proponer una
+solución al tema.
 
-## Stay Updated
+## Dockerfile
 
-If you want to keep up with the updates, [follow the official Sylius account on Twitter](http://twitter.com/Sylius) and [like us on Facebook](https://www.facebook.com/SyliusEcommerce/).
+Modificamos únicamnte el agregado de una variable en el multistage `base` para
+que composer pueda usar más de 1.5GB de RAM (valor limitado por defecto), usando
+la variable `COMPOSER_MEMORY_LIMIT=-1`.
 
-## Bug Tracking
+## Uso de direnv mediante `.envrc`
 
-If you want to report a bug or suggest an idea, please use [GitHub issues](https://github.com/Sylius/Sylius/issues).
+Proponemos un refactor del docker-compose para ser usado en linux, y considerar
+que el usuario usado por el contenedor coincida con el del user que corre
+docker. Para ello, podemo usar o no [direnv](https://direnv.net/).
 
-## Community Support
+### Uso con direnv
 
-Get Sylius support on [Slack](https://sylius.com/slack), [Forum](https://forum.sylius.com/) or [Stack Overflow](https://stackoverflow.com/questions/tagged/sylius).
+Setea automáticamente el valor de `DOCKER_USER` a partir de `.envrc`, por tanto,
+al ingresar al directorio del proyecto, y habiendo **permitido a direnv setear
+esta variable**, el valor es seteado automáticamente. Podemos chequear si el
+valor está seteado con:
 
-## MIT License
+```bash
+echo $DOCKER_USER
+```
+> Debe recibir algún valor entero
 
-Sylius is completely free and released under the [MIT License](https://github.com/Sylius/Sylius/blob/master/LICENSE).
+### Uso sin direnv
 
-## Authors
+Debe setear esta variable como lo hace el archivo `.envrc`. Para ello, podemos
+en una sesión del shell usar:
 
-Sylius was originally created by [Paweł Jędrzejewski](http://pjedrzejewski.com).
-See the list of [contributors from our awesome community](https://github.com/Sylius/Sylius/contributors).
+```bash
+source .envrc
+```
+
+Y verificar como en el paso antes mencionado
+
+> Es importante destacar que el comando `source` funciona en la misma sesión
+> donde se corrió. Si inicia una nueva solapa o terminal, debe correr el mismo
+> comando cada vez.
+
+## docker-compose adaptado
+
+El `docker-compose.yml` provisto por el repositorio template, parte
+considerando que el desarrolaldor usará Mac / Windows / Linux. Por tanto,
+algunos volúmenes están comentados para explicar como se usan en cada SO. Hemos
+modifcado estos volúmenes para que funcionen directamente en Linux.
+
+Además, en los contenedores de **php** y **node** hemos agregado la instrucción:
+
+```yaml
+...
+  php:
+    ... 
+    user: $DOCKER_USER
+    ...
+  node:
+    ...
+    user: $DOCKER_USER
+    ...
+```
+
+Con el objeto que corran con el usuario del sistema y no cree archivos como root
+en el directorio local.
+
+# Iniciando el stack
+
+Simplemente correr:
+
+```bash
+docker-compose build
+docker-compose up
+```
+
+Una vez todo levantado, podemos ingresar al navegador usando:
+
+```bash
+xdg-open http://localhost
+```
+
+El usuario es **sylius** con igual password
+
+## Instalar algun plugin
+
+Si queremos instalar algo nuevo, podemos modificar `composer.json` y luego
+correr `composer instalall` o `composer update`. Pero estas tareas deben
+correrse dentro del contenedor:
+
+```bash
+docker-compose exec php ash
+```
+> Nos permite ingresar al contenedor de php
+
+Luego, corremos el comando necearios:
+
+```bash
+composer up
+```
+
+De igual forma, podemos usar la consola de symfony o correr aquellos comandos
+que necesitemos de node, usando el contenedor de nodejs.
+
