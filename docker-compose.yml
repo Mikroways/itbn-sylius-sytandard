@@ -103,5 +103,13 @@ services:
     ports:
       - "${MAILHOG_PORT:-8025}:8025"
 
+  phpmyadmin:
+    image: phpmyadmin
+    restart: always
+    ports:
+      - 8080:3307
+    environment:
+      - PMA_ARBITRARY=1
+
 volumes:
   mysql-data:
