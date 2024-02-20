@@ -95,7 +95,7 @@ services:
   mailhog:
     # do not use in production!
     image: mailhog/mailhog:latest
-    restart: on-failure
+    restart: always
     environment:
       - MH_STORAGE=maildir
     # volumes:
