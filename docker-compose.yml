@@ -5,7 +5,7 @@ services:
     build:
       context: .
       target: sylius_php_dev
-    restart: on-failure
+    restart: always
     depends_on:
       - migrations
     environment:
@@ -42,7 +42,7 @@ services:
     container_name: mysql
     image: mysql:5.7 # Sylius is fully working on mysql 8.0 version
     platform: linux/amd64
-    restart: on-failure
+    restart: always
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=sylius
@@ -66,7 +66,7 @@ services:
     command: ["yarn", "watch"]
     depends_on:
       - php
-    restart: on-failure
+    restart: always
     environment:
       - GULP_ENV=dev
       - PHP_HOST=php
@@ -82,7 +82,7 @@ services:
     build:
       context: .
       target: sylius_nginx
-    restart: on-failure
+    restart: always
     depends_on:
       - php
       - node # to ensure correct build order
@@ -104,12 +104,14 @@ services:
       - "${MAILHOG_PORT:-8025}:8025"
 
   phpmyadmin:
-    image: phpmyadmin
+    image: phpmyadmin:5.2.0
     restart: always
     ports:
-      - 8080:3307
+      - 8080:80
     environment:
-      - PMA_ARBITRARY=1
+      - PMA_HOST=mysql
+      - PMA_VERBOSE=mysql
+
 
 volumes:
   mysql-data:
