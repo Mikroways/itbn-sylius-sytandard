@@ -5,6 +5,9 @@
 /public/media
 !/public/media/image/.gitkeep
 
+**/node_modules/
+**/.serverless/
+
 /etc/build/*
 !/etc/build/.gitignore
 
